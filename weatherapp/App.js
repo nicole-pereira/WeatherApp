@@ -6,112 +6,132 @@
  * @flow strict-local
  */
 
-import React from 'react';
-import type {Node} from 'react';
+import React, {useState, useCallback} from 'react';
 import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
+  ImageBackground,
   StyleSheet,
-  Text,
-  useColorScheme,
+  TextInput,
+  ActivityIndicator,
   View,
+  Text,
 } from 'react-native';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+import axios from 'axios';
 
-/* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
- * LTI update could not be added via codemod */
-const Section = ({children, title}): Node => {
-  const isDarkMode = useColorScheme() === 'dark';
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+
+  image: {
+    flex: 1,
+    flexDirection: 'column',
+  },
+
+  textInput: {
+    borderBottomWidth: 3,
+    padding: 5,
+    paddingVertical: 20,
+    marginVertical: 100,
+    marginHorizontal: 10,
+    backgroundColor: '#D2691E',
+    fontSize: 19,
+    borderRadius: 16,
+  },
+
+  infoView: {
+    alignItems: 'center',
+  },
+
+  cityCountryText: {
+    color: '#D2691E',
+    fontSize: 40,
+    fontWeight: 'bold',
+  },
+
+  dateText: {
+    color: '#D2691E',
+    fontSize: 22,
+    marginVertical: 10,
+    fontWeight: 'bold',
+  },
+
+  tempText: {
+    fontSize: 40,
+    color: '#D2691E',
+    marginVertical: 10,
+  },
+
+  minMaxText: {
+    fontSize: 22,
+    color: '#D2691E',
+    marginVertical: 10,
+    fontWeight: '500',
+  },
+});
+
+const App = () => {
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState([]);
+
+  const api = {
+    key: '486a7dceff36934a00e8daaa99a9630e',
+    baseUrl: 'http://api.openweathermap.org/data/2.5/',
+  };
+  const fetchDataHandler = useCallback(() => {
+    setLoading(true);
+    setInput('');
+    axios({
+      method: 'GET',
+      url: `https://api.openweathermap.org/data/2.5/weather?q=${input}&units=metric&appid=${api.key}`,
+    })
+      .then(res => {
+        setData(res.data);
+      })
+      .catch(e => console.dir(e))
+      .finally(() => setLoading(false));
+  }, [api.key, input]);
+
   return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
+    <View style={styles.root}>
+      <ImageBackground
+        source={require('./assets/bg2.jpg')}
+        resizeMode="cover"
+        style={styles.image}>
+        <View>
+          <TextInput
+            placeholder="Escreva o nome da cidade!"
+            onChangeText={text => setInput(text)}
+            value={input}
+            placeholderTextColor={'#000'}
+            style={styles.textInput}
+            onSubmitEditing={fetchDataHandler}
+          />
+        </View>
+        {loading && (
+          <View>
+            <ActivityIndicator size={'large'} color="#000" />
+          </View>
+        )}
+
+        {data && (
+          <View style={styles.infoView}>
+            <Text style={styles.cityCountryText}>
+              {`${data.name}, ${data?.sys?.country}`}
+            </Text>
+            <Text style={styles.tempText}>{`${Math.round(
+              data?.main?.temp,
+            )} °C`}</Text>
+            <Text style={styles.minMaxText}>{`Min ${Math.round(
+              data?.main?.temp_min,
+            )} °C / Max ${Math.round(data?.main?.temp_max)} °C`}</Text>
+            <Text style={styles.dateText}>{new Date().toLocaleString()}</Text>
+          </View>
+        )}
+      </ImageBackground>
     </View>
   );
 };
-
-const App: () => Node = () => {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
-
-  return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.js</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
-};
-
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
 
 export default App;
